@@ -31,37 +31,24 @@ fn get_lowest_location(seeds: &Vec<u64>, maps: &Vec<Vec<Vec<u64>>>) -> u64{
 }
 // Does not merge overlapping indices, but why bother?
 fn get_lowest_location_from_range(seeds: &Vec<u64>, maps: &Vec<Vec<Vec<u64>>>) -> u64{
-    // Initialize
     let mut idx = Vec::new();
     for i in (0..seeds.len()).step_by(2){
         idx.push([seeds[i], seeds[i+1]]);
     }
-    // Map
+    
     for map in maps{
-        //println!("{:?}", idx);
         let mut new_idx = Vec::new();
         for m in map{
             let mut idx_nm = Vec::new();
-            for i in &mut idx{
-                if i[0] > m[1]+m[2] || i[0]+i[1] < m[1] { // Out of range
-                    idx_nm.push([i[0], i[1]]);
+            for i in idx{
+                if i[0] < m[1] {
+                    idx_nm.push([i[0], i[1].min(m[1]-i[0])]);
                 }
-                else if i[0] >= m[1] && i[0]+i[1] <= m[1]+m[2]{ // Completely within
-                    new_idx.push([m[0] + i[0] - m[1], i[1]]);
+                if i[0]+i[1] >= m[1] && i[0] < m[1]+m[2]{
+                    new_idx.push([m[0] + (i[0].saturating_sub(m[1])), m[2] - (i[0].saturating_sub(m[1])) - (m[1]+m[2]).saturating_sub(i[0]+i[1])]);
                 }
-                else if i[0] < m[1] && i[0]+i[1] > m[1]+m[2]{ // Bothersome overlap
-                    idx_nm.push([i[0], m[1]-i[0]]);
-                    new_idx.push([m[0], m[2]]);
-                    idx_nm.push([m[1]+m[2], (i[0]+i[1]) - (m[1]+m[2])]);
-
-                }
-                else if i[0] < m[1] && i[0]+i[1] <= m[1]+m[2]{ // Left poke out
-                    idx_nm.push([i[0], m[1]-i[0]]);
-                    new_idx.push([m[0], m[2]]);
-                }
-                else if i[0] >= m[1] && i[0]+i[1] > m[1]+m[2]{ // Right poke out
-                    new_idx.push([i[0], m[2] - (i[0]-m[1])]);
-                    idx_nm.push([m[1] + m[2], (i[0]+i[1]) - (m[1]+m[2])]);
+                if  i[0]+i[1] > m[1]+m[2] {
+                    idx_nm.push([(m[1]+m[2]).max(i[0]), i[1] - (m[1]+m[2]).saturating_sub(i[0])]);
                 }
             }
             idx = idx_nm;
